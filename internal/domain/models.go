@@ -10,15 +10,20 @@ type User struct {
 	Name     string `json:"name"`
 	Email    string `gorm:"uniqueIndex" json:"email"`
 	Password string `json:"-"`
-	Role     string `json:"role"` // "donor" or "recipient"
+	Role     string `json:"role"` // "donor", "recipient"
 }
 
 type FoodPost struct {
 	gorm.Model
-	Title       string    `json:"title"`
+	Title       string    `json:"title" binding:"required"`
 	Description string    `json:"description"`
-	Quantity    string    `json:"quantity"`
-	ExpiryDate  time.Time `json:"expiry_date"`
+	Quantity    string    `json:"quantity" binding:"required"`
+	ExpiryDate  time.Time `json:"expiry_date" binding:"required"`
 	DonorID     uint      `json:"donor_id"`
 	Status      string    `json:"status"` // "available", "claimed", "completed"
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
