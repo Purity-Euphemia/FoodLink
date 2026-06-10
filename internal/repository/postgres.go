@@ -30,7 +30,7 @@ func (r *PostgresRepository) CreateFoodPost(post *domain.FoodPost) error {
 
 func (r *PostgresRepository) ListActivePosts() ([]domain.FoodPost, error) {
 	var posts []domain.FoodPost
-	err := r.db.Where("status = ? AND expiry_date > NOW()", "available").Find(&posts).Error
+	err := r.db.Where("status = ? AND expiry_date > NOW()", "available").Order("created_at DESC").Find(&posts).Error
 	return posts, err
 }
 

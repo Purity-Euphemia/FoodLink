@@ -42,14 +42,21 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token structure"})
+			c.Abort()
+			return
+		}
+
+		role, ok := claims["role"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User role missing in token"})
 			c.Abort()
 			return
 		}
 
 		userIDFloat, _ := claims["user_id"].(float64)
 		c.Set("userID", uint(userIDFloat))
-		c.Set("userRole", claims["role"].(string))
+		c.Set("userRole", role)
 		c.Next()
 	}
 }
