@@ -18,6 +18,10 @@ func NewService(repo *repository.PostgresRepository) *Service {
 }
 
 func (s *Service) RegisterUser(user *domain.User) error {
+	if user.Password == "" {
+		return errors.New("password is required")
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		return err
@@ -63,6 +67,7 @@ func (s *Service) ClaimDonation(postID uint, recipientID uint) error {
 	}
 
 	post.Status = "claimed"
+	post.RecipientID = recipientID
 	return s.repo.UpdateFoodPost(post)
 }
 
