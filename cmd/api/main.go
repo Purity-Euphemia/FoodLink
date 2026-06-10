@@ -2,10 +2,12 @@ package main
 
 import (
 	"foodlink/internal/api/handlers"
+	"foodlink/internal/api/middleware"
 	"foodlink/internal/business"
 	"foodlink/internal/domain"
 	"foodlink/internal/repository"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
@@ -13,30 +15,40 @@ import (
 )
 
 func main() {
-	// Configuration (In production, use environment variables)
-	dsn := "host=localhost user=postgres password=password dbname=foodlink port=5432 sslmode=disable"
-	
+	// 1. Database Connection
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "host=localhost user=postgres password=postgres dbname=foodlink port=5432 sslmode=disable"
+	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatal("Failed to connect to database")
 	}
 
-	// Auto-migrate schema
+	// 2. Migrations
 	db.AutoMigrate(&domain.User{}, &domain.FoodPost{})
 
-	// Dependency Injection
-	repo := repository.NewRepository(db)
-	donService := business.NewDonationService(repo)
-	donHandler := handlers.NewDonationHandler(donService)
+	// 3. Initialize Layers
+	repo := repository.NewPostgresRepository(db)
+	service := business.NewService(repo)
+	handler := handlers.NewHandler(service)
 
-	// Router Setup
+	// 4. Routes
 	r := gin.Default()
-
 	v1 := r.Group("/api/v1")
 	{
-		v1.POST("/donations", donHandler.CreatePost)
+		v1.POST("/register", handler.Register)
+		v1.POST("/login", handler.Login)
+
+		protected := v1.Group("/")
+		protected.Use(middleware.AuthMiddleware())
+		protected.POST("/donations", handler.PostDonation)
+		protected.GET("/donations", handler.ListDonations)
+		protected.PATCH("/donations/:id/claim", handler.ClaimDonation)
+		protected.GET("/stats", handler.GetStats)
 	}
 
-	log.Println("Server starting on :8080")
+	log.Println("Foodlink Backend running on :8080")
 	r.Run(":8080")
 }

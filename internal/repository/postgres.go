@@ -2,6 +2,7 @@ package repository
 
 import (
 	"foodlink/internal/domain"
+
 	"gorm.io/gorm"
 )
 
@@ -31,4 +32,32 @@ func (r *PostgresRepository) ListActivePosts() ([]domain.FoodPost, error) {
 	var posts []domain.FoodPost
 	err := r.db.Where("status = ? AND expiry_date > NOW()", "available").Find(&posts).Error
 	return posts, err
+}
+
+func (r *PostgresRepository) GetPostByID(id uint) (*domain.FoodPost, error) {
+	var post domain.FoodPost
+	err := r.db.First(&post, id).Error
+	return &post, err
+}
+
+func (r *PostgresRepository) UpdateFoodPost(post *domain.FoodPost) error {
+	return r.db.Save(post).Error
+}
+
+func (r *PostgresRepository) GetTotalUserCount() (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.User{}).Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) GetTotalDonations() (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.FoodPost{}).Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) GetActiveDonorsCount() (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.FoodPost{}).Distinct("donor_id").Count(&count).Error
+	return count, err
 }
