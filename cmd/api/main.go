@@ -31,22 +31,24 @@ func main() {
 
 	// 3. Initialize Layers
 	repo := repository.NewPostgresRepository(db)
-	service := business.NewService(repo)
-	handler := handlers.NewHandler(service)
+	authService := business.NewAuthService(repo)
+	authHandler := handlers.NewAuthHandler(authService)
+	donService := business.NewDonationService(repo)
+	donHandler := handlers.NewDonationHandler(donService)
 
 	// 4. Routes
 	r := gin.Default()
 	v1 := r.Group("/api/v1")
 	{
-		v1.POST("/register", handler.Register)
-		v1.POST("/login", handler.Login)
+		v1.POST("/register", authHandler.Register)
+		v1.POST("/login", authHandler.Login)
 
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthMiddleware())
-		protected.POST("/donations", handler.PostDonation)
-		protected.GET("/donations", handler.ListDonations)
-		protected.PATCH("/donations/:id/claim", handler.ClaimDonation)
-		protected.GET("/stats", handler.GetStats)
+		protected.POST("/donations", donHandler.PostDonation)
+		protected.GET("/donations", donHandler.ListDonations)
+		protected.PATCH("/donations/:id/claim", donHandler.ClaimDonation)
+		protected.GET("/stats", donHandler.GetStats)
 	}
 
 	log.Println("Foodlink Backend running on :8080")
