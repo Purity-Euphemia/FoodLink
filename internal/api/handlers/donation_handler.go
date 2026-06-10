@@ -30,7 +30,13 @@ func (h *DonationHandler) PostDonation(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
-	post.DonorID = userID.(uint) // userID is already uint from middleware
+
+	uid, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal identity error"})
+		return
+	}
+	post.DonorID = uid
 
 	if err := h.service.CreateDonation(&post); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
@@ -49,8 +55,8 @@ func (h *DonationHandler) ListDonations(c *gin.Context) {
 }
 
 func (h *DonationHandler) ClaimDonation(c *gin.Context) {
-	postIDStr := c.Param("id")                          // Assuming ID is part of the URL path
-	postID, err := strconv.ParseUint(postIDStr, 10, 64) // Use 64-bit for uint
+	postIDStr := c.Param("id")
+	postID, err := strconv.ParseUint(postIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
@@ -60,9 +66,15 @@ func (h *DonationHandler) ClaimDonation(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
-	} // userID is already uint from middleware
+	}
 
-	if err := h.service.ClaimDonation(uint(postID), userID.(uint)); err != nil {
+	uid, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal identity error"})
+		return
+	}
+
+	if err := h.service.ClaimDonation(uint(postID), uid); err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
