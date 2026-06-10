@@ -27,7 +27,9 @@ func main() {
 	}
 
 	// 2. Migrations
-	db.AutoMigrate(&domain.User{}, &domain.FoodPost{})
+	if err := db.AutoMigrate(&domain.User{}, &domain.FoodPost{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
 
 	// 3. Initialize Layers
 	repo := repository.NewPostgresRepository(db)
@@ -43,12 +45,14 @@ func main() {
 		v1.POST("/register", authHandler.Register)
 		v1.POST("/login", authHandler.Login)
 
-		protected := v1.Group("/")
+		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware())
-		protected.POST("/donations", donHandler.PostDonation)
-		protected.GET("/donations", donHandler.ListDonations)
-		protected.PATCH("/donations/:id/claim", donHandler.ClaimDonation)
-		protected.GET("/stats", donHandler.GetStats)
+		{
+			protected.POST("/donations", donHandler.PostDonation)
+			protected.GET("/donations", donHandler.ListDonations)
+			protected.PATCH("/donations/:id/claim", donHandler.ClaimDonation)
+			protected.GET("/stats", donHandler.GetStats)
+		}
 	}
 
 	log.Println("Foodlink Backend running on :8080")

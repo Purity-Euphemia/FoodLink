@@ -24,17 +24,19 @@ func (s *AuthService) RegisterUser(user *domain.User) error {
 
 	// Check if user already exists
 	existingUser, err := s.repo.GetUserByEmail(user.Email)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err // Return actual database error
-	}
-	if err == nil && existingUser.ID != 0 { // User found
+	if err == nil && existingUser != nil {
+		// Using err == nil is safer than checking ID != 0 directly if existingUser could be nil
 		return errors.New("user with this email already exists")
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Some other database error occurred, not just "record not found"
+		return err
 	}
 	if user.Role == "" {
 		user.Role = "recipient" // Default role
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -45,9 +47,12 @@ func (s *AuthService) RegisterUser(user *domain.User) error {
 func (s *AuthService) Authenticate(email, password string) (*domain.User, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
+		// We return a generic error to avoid leaking whether a user exists
 		return nil, errors.New("invalid credentials")
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 	return user, nil
