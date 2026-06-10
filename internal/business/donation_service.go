@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type Service struct {
@@ -20,6 +21,18 @@ func NewService(repo *repository.PostgresRepository) *Service {
 func (s *Service) RegisterUser(user *domain.User) error {
 	if user.Password == "" {
 		return errors.New("password is required")
+	}
+
+	// Check if user already exists
+	existingUser, err := s.repo.GetUserByEmail(user.Email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err // Return actual database error
+	}
+	if err == nil && existingUser.ID != 0 { // User found
+		return errors.New("user with this email already exists")
+	}
+	if user.Role == "" {
+		user.Role = "recipient" // Default role
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
@@ -56,7 +69,10 @@ func (s *Service) ListDonations() ([]domain.FoodPost, error) {
 func (s *Service) ClaimDonation(postID uint, recipientID uint) error {
 	post, err := s.repo.GetPostByID(postID)
 	if err != nil {
-		return errors.New("donation post not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("donation post not found")
+		}
+		return err
 	}
 
 	if post.DonorID == recipientID {

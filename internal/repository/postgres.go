@@ -34,6 +34,12 @@ func (r *PostgresRepository) ListActivePosts() ([]domain.FoodPost, error) {
 	return posts, err
 }
 
+func (r *PostgresRepository) GetUserByID(id uint) (*domain.User, error) {
+	var user domain.User
+	err := r.db.First(&user, id).Error
+	return &user, err
+}
+
 func (r *PostgresRepository) GetPostByID(id uint) (*domain.FoodPost, error) {
 	var post domain.FoodPost
 	err := r.db.First(&post, id).Error

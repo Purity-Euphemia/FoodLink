@@ -33,7 +33,7 @@ func (h *Handler) PostDonation(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
-	post.DonorID = userID.(uint)
+	post.DonorID = userID.(uint) // userID is already uint from middleware
 
 	if err := h.service.CreateDonation(&post); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
@@ -52,8 +52,8 @@ func (h *Handler) ListDonations(c *gin.Context) {
 }
 
 func (h *Handler) ClaimDonation(c *gin.Context) {
-	postIDStr := c.Param("id")
-	postID, err := strconv.ParseUint(postIDStr, 10, 32)
+	postIDStr := c.Param("id")                          // Assuming ID is part of the URL path
+	postID, err := strconv.ParseUint(postIDStr, 10, 64) // Use 64-bit for uint
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
@@ -63,7 +63,7 @@ func (h *Handler) ClaimDonation(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
-	}
+	} // userID is already uint from middleware
 
 	if err := h.service.ClaimDonation(uint(postID), userID.(uint)); err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -85,7 +85,9 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	// Hide password in response
+	user.Password = ""
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user": user})
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -104,6 +106,7 @@ func (h *Handler) Login(c *gin.Context) {
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
+		"role":    user.Role,
 		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	})
 
@@ -113,7 +116,13 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user_id": user.ID})
+	c.JSON(http.StatusOK, gin.H{
+		"token":   tokenString,
+		"user_id": user.ID,
+		"name":    user.Name,
+		"email":   user.Email,
+		"role":    user.Role,
+	})
 }
 
 func (h *Handler) GetStats(c *gin.Context) {
