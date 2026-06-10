@@ -25,8 +25,8 @@ func (s *DonationService) CreateDonation(post *domain.FoodPost) error {
 	return s.repo.CreateFoodPost(post)
 }
 
-func (s *DonationService) ListDonations() ([]domain.FoodPost, error) {
-	return s.repo.ListActivePosts()
+func (s *DonationService) ListDonations(category string) ([]domain.FoodPost, error) {
+	return s.repo.ListActivePosts(category)
 }
 
 func (s *DonationService) ClaimDonation(postID uint, recipientID uint) error {
@@ -51,7 +51,7 @@ func (s *DonationService) ClaimDonation(postID uint, recipientID uint) error {
 }
 
 func (s *DonationService) GetDashboardStats() (map[string]interface{}, error) {
-	posts, err := s.repo.ListActivePosts()
+	posts, err := s.repo.ListActivePosts("") // Pass empty string for all categories
 	if err != nil {
 		return nil, err
 	}

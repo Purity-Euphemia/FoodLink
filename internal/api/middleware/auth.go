@@ -60,3 +60,16 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RoleMiddleware restricts access to specific roles
+func RoleMiddleware(requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("userRole")
+		if !exists || role != requiredRole {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: insufficient permissions"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}

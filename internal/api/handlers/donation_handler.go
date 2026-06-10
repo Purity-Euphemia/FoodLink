@@ -46,7 +46,8 @@ func (h *DonationHandler) PostDonation(c *gin.Context) {
 }
 
 func (h *DonationHandler) ListDonations(c *gin.Context) {
-	posts, err := h.service.ListDonations()
+	category := c.Query("category")
+	posts, err := h.service.ListDonations(category)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch donations"})
 		return

@@ -63,9 +63,9 @@ func main() {
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
-			protected.POST("/donations", donHandler.PostDonation)
+			protected.POST("/donations", middleware.RoleMiddleware("donor"), donHandler.PostDonation)
 			protected.GET("/donations", donHandler.ListDonations)
-			protected.PATCH("/donations/:id/claim", donHandler.ClaimDonation)
+			protected.PATCH("/donations/:id/claim", middleware.RoleMiddleware("recipient"), donHandler.ClaimDonation)
 			protected.GET("/stats", donHandler.GetStats)
 		}
 	}
