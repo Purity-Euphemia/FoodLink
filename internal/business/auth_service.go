@@ -23,15 +23,16 @@ func (s *AuthService) RegisterUser(user *domain.User) error {
 	}
 
 	// Check if user already exists
-	existingUser, err := s.repo.GetUserByEmail(user.Email)
-	if err == nil && existingUser != nil {
-		// Using err == nil is safer than checking ID != 0 directly if existingUser could be nil
+	_, err := s.repo.GetUserByEmail(user.Email)
+	if err == nil {
+		// If err is nil, a user with this email was found
 		return errors.New("user with this email already exists")
 	}
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		// Some other database error occurred, not just "record not found"
 		return err
 	}
+	// If err is gorm.ErrRecordNotFound, it means the user does not exist, so we can proceed.
 	if user.Role == "" {
 		user.Role = "recipient" // Default role
 	}

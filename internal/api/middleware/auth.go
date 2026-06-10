@@ -40,21 +40,30 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token structure"})
+		claims, claimsOk := token.Claims.(jwt.MapClaims)
+		if !claimsOk {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims format"})
 			c.Abort()
 			return
 		}
 
-		role, ok := claims["role"].(string)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User role missing in token"})
+		userIDFloat, userIDOk := claims["user_id"].(float64)
+		if !userIDOk {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID missing or invalid in token"})
 			c.Abort()
 			return
 		}
 
-		userIDFloat, _ := claims["user_id"].(float64)
+		role, roleOk := claims["role"].(string)
+		if !roleOk {
+			// If role is missing, default to empty string or a guest role, but don't abort
+			// unless it's strictly required for all authenticated users.
+			// For RBAC, RoleMiddleware will handle insufficient permissions.
+			role = ""
+			c.Abort()
+			return
+		}
+
 		c.Set("userID", uint(userIDFloat))
 		c.Set("userRole", role)
 		c.Next()
