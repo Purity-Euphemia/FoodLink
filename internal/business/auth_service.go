@@ -18,6 +18,9 @@ func NewAuthService(repo *repository.PostgresRepository) *AuthService {
 }
 
 func (s *AuthService) RegisterUser(user *domain.User) error {
+	if user.Email == "" {
+		return errors.New("email is required")
+	}
 	if user.Password == "" {
 		return errors.New("password is required")
 	}
@@ -28,13 +31,16 @@ func (s *AuthService) RegisterUser(user *domain.User) error {
 		// If err is nil, a user with this email was found
 		return errors.New("user with this email already exists")
 	}
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		// Some other database error occurred, not just "record not found"
 		return err
 	}
 	// If err is gorm.ErrRecordNotFound, it means the user does not exist, so we can proceed.
+
 	if user.Role == "" {
 		user.Role = "recipient" // Default role
+	} else if user.Role != "donor" && user.Role != "recipient" {
+		return errors.New("invalid role: must be donor or recipient")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -48,8 +54,11 @@ func (s *AuthService) RegisterUser(user *domain.User) error {
 func (s *AuthService) Authenticate(email, password string) (*domain.User, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		// We return a generic error to avoid leaking whether a user exists
-		return nil, errors.New("invalid credentials")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("invalid credentials")
+		}
+		// Internal system/database error
+		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
