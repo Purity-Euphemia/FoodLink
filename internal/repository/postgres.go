@@ -71,3 +71,15 @@ func (r *PostgresRepository) GetActiveDonorsCount() (int64, error) {
 	err := r.db.Model(&domain.FoodPost{}).Distinct("donor_id").Count(&count).Error
 	return count, err
 }
+
+func (r *PostgresRepository) GetPostsByDonor(donorID uint) ([]domain.FoodPost, error) {
+	var posts []domain.FoodPost
+	err := r.db.Where("donor_id = ?", donorID).Order("created_at DESC").Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostgresRepository) GetPostsByRecipient(recipientID uint) ([]domain.FoodPost, error) {
+	var posts []domain.FoodPost
+	err := r.db.Where("recipient_id = ?", recipientID).Order("created_at DESC").Find(&posts).Error
+	return posts, err
+}
