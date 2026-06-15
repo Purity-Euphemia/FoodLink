@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { client } from '../src/api/client';
 import { DashboardStats, FoodPost } from '../types';
+import { StatCard } from './StatCard'; // Import the new StatCard component
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -107,11 +108,3 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
-
-const StatCard = ({ title, value, color }: { title: string, value: number, color: string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-    <div className={`w-10 h-10 ${color} rounded-lg mb-4 opacity-20`}></div>
-    <p className="text-slate-500 text-sm font-medium">{title}</p>
-    <h3 className="text-3xl font-bold text-slate-900 mt-1">{value.toLocaleString()}</h3>
-  </div>
-);
