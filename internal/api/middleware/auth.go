@@ -60,8 +60,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			// unless it's strictly required for all authenticated users.
 			// For RBAC, RoleMiddleware will handle insufficient permissions.
 			role = ""
-			c.Abort()
-			return
 		}
 
 		c.Set("userID", uint(userIDFloat))
