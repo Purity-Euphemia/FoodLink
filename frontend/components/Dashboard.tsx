@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { client } from '../src/api/client';
 import { DashboardStats, FoodPost } from '../types';
-import { StatCard } from './StatCard'; // Import the new StatCard component
+import { StatCard } from './StatCard';
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -10,27 +10,32 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        // Fetching stats and donations in parallel
+        // Fetch both statistics and recent donations in parallel
         const [statsRes, donationsRes] = await Promise.all([
-          client.get<DashboardStats>('/stats'),
-          client.get<FoodPost[]>('/donations')
+          client.get<DashboardStats>('/stats', { signal: controller.signal }),
+          client.get<FoodPost[]>('/donations', { signal: controller.signal })
         ]);
 
         setStats(statsRes.data);
-        setDonations(donationsRes.data.slice(0, 5)); // Show only top 5 recent ones
+        setDonations(Array.isArray(donationsRes.data) ? donationsRes.data.slice(0, 5) : []);
         setError(null);
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
-        setError("Failed to load dashboard data. Please try again later.");
+        if (err instanceof Error && err.name !== 'CanceledError') {
+          console.error("Dashboard fetch error:", err);
+          setError("Failed to load dashboard data. Please try again later.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
+    return () => controller.abort();
   }, []);
 
   if (loading) {
