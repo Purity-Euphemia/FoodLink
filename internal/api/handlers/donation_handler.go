@@ -91,3 +91,72 @@ func (h *DonationHandler) GetStats(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, stats)
 }
+
+// CompleteDonation handles PATCH /donations/:id/complete
+// Marks a claimed donation as fully picked up (Screen 8 → "Mark as Picked Up").
+func (h *DonationHandler) CompleteDonation(c *gin.Context) {
+	postIDStr := c.Param("id")
+	postID, err := strconv.ParseUint(postIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	uid, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal identity error"})
+		return
+	}
+
+	if err := h.service.CompletePickup(uint(postID), uid); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Donation marked as completed"})
+}
+
+// GetDonation handles GET /donations/:id — returns a single donation post.
+func (h *DonationHandler) GetDonation(c *gin.Context) {
+	postIDStr := c.Param("id")
+	postID, err := strconv.ParseUint(postIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+
+	post, err := h.service.GetDonationByID(uint(postID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, post)
+}
+
+// GetMyDonations handles GET /donations/my — returns the current user's donations.
+func (h *DonationHandler) GetMyDonations(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	uid, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal identity error"})
+		return
+	}
+
+	role, _ := c.Get("userRole")
+	roleStr, _ := role.(string)
+
+	posts, err := h.service.GetMyDonations(uid, roleStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch your donations"})
+		return
+	}
+	c.JSON(http.StatusOK, posts)
+}

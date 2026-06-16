@@ -50,6 +50,47 @@ func (s *DonationService) ClaimDonation(postID uint, recipientID uint) error {
 	return s.repo.UpdateFoodPost(post)
 }
 
+// CompletePickup transitions a claimed donation to "completed" (Screen 8 → "Mark as Picked Up").
+func (s *DonationService) CompletePickup(postID uint, recipientID uint) error {
+	post, err := s.repo.GetPostByID(postID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("donation post not found")
+		}
+		return err
+	}
+
+	if post.RecipientID != recipientID {
+		return errors.New("you have not claimed this donation")
+	}
+	if post.Status != "claimed" {
+		return errors.New("donation must be in claimed state to complete")
+	}
+
+	post.Status = "completed"
+	return s.repo.UpdateFoodPost(post)
+}
+
+// GetDonationByID fetches a single food post by its ID.
+func (s *DonationService) GetDonationByID(postID uint) (*domain.FoodPost, error) {
+	post, err := s.repo.GetPostByID(postID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("donation not found")
+		}
+		return nil, err
+	}
+	return post, nil
+}
+
+// GetMyDonations returns posts for a user — their own donations if donor, or claimed/completed if recipient.
+func (s *DonationService) GetMyDonations(userID uint, role string) ([]domain.FoodPost, error) {
+	if role == "donor" {
+		return s.repo.GetPostsByDonor(userID)
+	}
+	return s.repo.GetPostsByRecipient(userID)
+}
+
 func (s *DonationService) GetDashboardStats() (map[string]interface{}, error) {
 	posts, err := s.repo.ListActivePosts("") // Pass empty string for all categories
 	if err != nil {

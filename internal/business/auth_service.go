@@ -67,3 +67,38 @@ func (s *AuthService) Authenticate(email, password string) (*domain.User, error)
 	}
 	return user, nil
 }
+
+// GetProfileStats returns the authenticated user's profile and computed impact statistics.
+func (s *AuthService) GetProfileStats(userID uint, role string) (*domain.ProfileStats, error) {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	// Hide password from response
+	user.Password = ""
+
+	var collected, posted int64
+	if role == "recipient" {
+		collected, err = s.repo.CountCompletedByRecipient(userID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		posted, err = s.repo.CountCompletedByDonor(userID)
+		if err != nil {
+			return nil, err
+		}
+		collected = posted
+	}
+
+	return &domain.ProfileStats{
+		User:               user,
+		DonationsCollected: collected,
+		DonationsPosted:    posted,
+		MealsProvided:      collected * 30,
+		CO2Saved:           collected * 7,
+	}, nil
+}

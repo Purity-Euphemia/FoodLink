@@ -52,6 +52,7 @@ func main() {
 	repo := repository.NewPostgresRepository(db)
 	authService := business.NewAuthService(repo)
 	authHandler := handlers.NewAuthHandler(authService)
+	profileHandler := handlers.NewProfileHandler(authService)
 	donService := business.NewDonationService(repo)
 	donHandler := handlers.NewDonationHandler(donService)
 
@@ -84,10 +85,17 @@ func main() {
 		protected := v1.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
+			// Donation endpoints
+			// NOTE: /donations/my MUST be registered before /donations/:id to avoid conflict
 			protected.POST("/donations", middleware.RoleMiddleware("donor"), donHandler.PostDonation)
 			protected.GET("/donations", donHandler.ListDonations)
+			protected.GET("/donations/my", donHandler.GetMyDonations)
+			protected.GET("/donations/:id", donHandler.GetDonation)
 			protected.PATCH("/donations/:id/claim", middleware.RoleMiddleware("recipient"), donHandler.ClaimDonation)
+			protected.PATCH("/donations/:id/complete", middleware.RoleMiddleware("recipient"), donHandler.CompleteDonation)
+			// Stats & Profile
 			protected.GET("/stats", donHandler.GetStats)
+			protected.GET("/profile", profileHandler.GetProfile)
 		}
 	}
 

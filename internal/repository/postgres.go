@@ -83,3 +83,21 @@ func (r *PostgresRepository) GetPostsByRecipient(recipientID uint) ([]domain.Foo
 	err := r.db.Where("recipient_id = ?", recipientID).Order("created_at DESC").Find(&posts).Error
 	return posts, err
 }
+
+// CountCompletedByRecipient returns how many donations a recipient has fully collected.
+func (r *PostgresRepository) CountCompletedByRecipient(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.FoodPost{}).
+		Where("recipient_id = ? AND status = ?", userID, "completed").
+		Count(&count).Error
+	return count, err
+}
+
+// CountCompletedByDonor returns how many donations a donor has had fully picked up.
+func (r *PostgresRepository) CountCompletedByDonor(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.FoodPost{}).
+		Where("donor_id = ? AND status = ?", userID, "completed").
+		Count(&count).Error
+	return count, err
+}
