@@ -64,10 +64,10 @@ export const DonatePage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto p-6 md:p-10">
+      <div className="max-w-3xl mx-auto p-6 md:p-10 font-sans">
         <header className="mb-8 text-center sm:text-left">
           <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-2">
-            <Sparkles className="text-indigo-600 h-8 w-8" />
+            <Sparkles className="text-brand-green h-8 w-8" />
             Share Extra Food
           </h1>
           <p className="text-slate-500 mt-2">Help reduce food waste and support families in your community</p>
@@ -92,7 +92,7 @@ export const DonatePage: React.FC = () => {
                 name="title"
                 value={formData.title}
                 placeholder="e.g., Fresh Organic Apples, Freshly Baked Bread"
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none transition-all"
                 onChange={handleChange}
                 required
               />
@@ -103,7 +103,7 @@ export const DonatePage: React.FC = () => {
               <select 
                 name="category"
                 value={formData.category}
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-all"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none bg-white transition-all"
                 onChange={handleChange}
               >
                 <option value="Veg">Veg</option>
@@ -121,7 +121,7 @@ export const DonatePage: React.FC = () => {
                 name="quantity"
                 value={formData.quantity}
                 placeholder="e.g., 5 kg, 10 loaves, 3 portions"
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none transition-all"
                 onChange={handleChange}
                 required
               />
@@ -134,7 +134,7 @@ export const DonatePage: React.FC = () => {
                 value={formData.description}
                 rows={3}
                 placeholder="List ingredients, allergen details, or packaging status..."
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-y"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none transition-all resize-y"
                 onChange={handleChange}
               />
             </div>
@@ -149,7 +149,7 @@ export const DonatePage: React.FC = () => {
                 name="pickup_location"
                 value={formData.pickup_location}
                 placeholder="e.g., 123 Main St Lobby, Corner Bakery"
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none transition-all"
                 onChange={handleChange}
               />
             </div>
@@ -163,7 +163,7 @@ export const DonatePage: React.FC = () => {
                 type="datetime-local" 
                 name="expiry_date"
                 value={formData.expiry_date}
-                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full p-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-green outline-none transition-all"
                 onChange={handleChange}
                 required
               />
@@ -181,7 +181,7 @@ export const DonatePage: React.FC = () => {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white p-3 rounded-lg font-semibold shadow-md shadow-indigo-100 active:scale-[0.98] transition-all"
+              className="flex-1 bg-brand-green hover:bg-[#218838] disabled:opacity-50 text-white p-3 rounded-lg font-semibold shadow-md shadow-green-100 active:scale-[0.98] transition-all"
             >
               {isLoading ? 'Posting Donation...' : 'Post Donation'}
             </button>

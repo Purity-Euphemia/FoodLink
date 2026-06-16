@@ -15,5 +15,9 @@ export interface FoodPost {
   status: 'available' | 'claimed' | 'completed';
   donor_id: number;
   recipient_id?: number;
+  description?: string;
+  quantity?: string;
+  image_url?: string;
+  expiry_date?: string;
   created_at: string;
 }
