@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
+import { BottomNav } from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 
 interface MainLayoutProps {
@@ -17,9 +18,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
-      <main className="flex-grow">
+      <main className="flex-grow pb-16 md:pb-0">
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 };

@@ -16,16 +16,26 @@ export const Dashboard: React.FC = () => {
   
   // Modal states
   const [selectedPost, setSelectedPost] = useState<FoodPost | null>(null);
+  const [confirmPickupPost, setConfirmPickupPost] = useState<FoodPost | null>(null);
+  const [showInProgress, setShowInProgress] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [claimedTitle, setClaimedTitle] = useState('');
 
-  const handleClaim = async (post: FoodPost) => {
+  // Step 1: open Confirm Pickup modal
+  const handleRequestClaim = (post: FoodPost) => {
+    setSelectedPost(null);
+    setConfirmPickupPost(post);
+  };
+
+  // Step 2: actually claim, then show In-Progress
+  const handleConfirmPickup = async () => {
+    if (!confirmPickupPost) return;
     setClaimError(null);
     try {
-      await client.patch(`/donations/${post.ID}/claim`);
-      setClaimedTitle(post.title);
-      setSelectedPost(null);
-      setShowSuccessOverlay(true);
+      await client.patch(`/donations/${confirmPickupPost.ID}/claim`);
+      setClaimedTitle(confirmPickupPost.title);
+      setConfirmPickupPost(null);
+      setShowInProgress(true);
       refresh();
     } catch (err: any) {
       console.error("Failed to claim donation:", err);
@@ -33,6 +43,12 @@ export const Dashboard: React.FC = () => {
       setClaimError(errMsg);
       alert(errMsg);
     }
+  };
+
+  // Step 3: mark as picked up → show Thank You
+  const handleMarkPickedUp = () => {
+    setShowInProgress(false);
+    setShowSuccessOverlay(true);
   };
 
   if (loading) {
@@ -238,7 +254,7 @@ export const Dashboard: React.FC = () => {
                 </button>
                 {user?.role === 'recipient' && selectedPost.status === 'available' && (
                   <button 
-                    onClick={() => handleClaim(selectedPost)}
+                    onClick={() => handleRequestClaim(selectedPost)}
                     className="flex-1 bg-brand-green hover:bg-[#218838] text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-green-100 transition-all active:scale-[0.98]"
                   >
                     Claim Donation
@@ -249,7 +265,134 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Success Success Overlay (Mockup Screen 9) */}
+        {/* Confirm Pickup Modal (Mockup Screen 7) */}
+        {confirmPickupPost && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-slate-100">
+                <button
+                  onClick={() => setConfirmPickupPost(null)}
+                  className="text-slate-400 hover:text-slate-700 text-sm flex items-center gap-1 mb-3 transition-colors"
+                >
+                  ← Back
+                </button>
+                <h3 className="text-xl font-bold text-slate-900">Confirm Pickup</h3>
+                <p className="text-slate-500 text-sm mt-1">You are about to claim this donation.</p>
+              </div>
+
+              <div className="p-6 flex items-center gap-4">
+                <img
+                  src={getCategoryImage(confirmPickupPost.category)}
+                  alt={confirmPickupPost.title}
+                  className="w-20 h-20 rounded-2xl object-cover flex-shrink-0"
+                />
+                <div>
+                  <h4 className="font-bold text-slate-900">{confirmPickupPost.title}</h4>
+                  <span className="text-xs font-bold text-brand-green bg-brand-light px-2 py-0.5 rounded-full">
+                    {confirmPickupPost.quantity || '15 Portions'}
+                  </span>
+                  <p className="text-xs text-slate-500 mt-1">From Restaurant Grand</p>
+                  <p className="text-xs text-slate-500">
+                    Today, {confirmPickupPost.expiry_date
+                      ? new Date(confirmPickupPost.expiry_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : '9:00 PM'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 pb-4 space-y-3">
+                <div className="bg-slate-50 rounded-2xl p-4 space-y-1">
+                  <p className="text-xs font-bold uppercase text-slate-400 tracking-wider">Pickup Address</p>
+                  <p className="text-sm font-semibold text-slate-800">{confirmPickupPost.pickup_location || '12 Allen Avenue, Ikeja, Lagos'}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-4 space-y-1">
+                  <p className="text-xs font-bold uppercase text-slate-400 tracking-wider">Instructions from donor</p>
+                  <p className="text-sm text-slate-700">{confirmPickupPost.description || 'Please come inside the gate and ask for the manager.'}</p>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6 flex gap-3">
+                <button
+                  onClick={() => setConfirmPickupPost(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-sm transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmPickup}
+                  className="flex-1 bg-brand-green hover:bg-[#218838] text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-green-100 transition-all active:scale-[0.98]"
+                >
+                  Confirm Pickup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* In-Progress Modal (Mockup Screen 8) */}
+        {showInProgress && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-xl font-bold text-slate-900">Pickup in Progress</h3>
+                <p className="text-slate-500 text-sm mt-1">Please pick up the food from the donor.</p>
+              </div>
+
+              {/* Animated route illustration */}
+              <div className="flex flex-col items-center justify-center py-8 px-6">
+                <div className="flex items-center gap-4 w-full max-w-xs">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 bg-brand-green rounded-full flex items-center justify-center shadow-lg shadow-green-200 animate-pulse">
+                      <MapPin size={22} className="text-white" fill="white" />
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">Donor</span>
+                  </div>
+                  <div className="flex-1 flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 h-1 rounded-full bg-brand-green animate-pulse"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                    <span className="text-brand-orange text-lg">📦</span>
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 h-1 rounded-full bg-slate-200"
+                      />
+                    ))}
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">
+                      <MapPin size={22} className="text-slate-400" />
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">You</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mx-6 mb-6 bg-slate-50 rounded-2xl p-4">
+                <h4 className="font-bold text-slate-900">{claimedTitle}</h4>
+                <div className="flex justify-between mt-2 text-xs text-slate-500">
+                  <span>From <span className="font-semibold text-slate-700">Restaurant Grand</span></span>
+                  <span>Pickup Time: <span className="font-semibold text-slate-700">9:00 PM – 10:00 PM</span></span>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6">
+                <button
+                  onClick={handleMarkPickedUp}
+                  className="w-full border-2 border-brand-green text-brand-green hover:bg-brand-light py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
+                >
+                  Mark as Picked Up
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Thank You Overlay (Mockup Screen 9) */}
         {showSuccessOverlay && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
@@ -260,8 +403,8 @@ export const Dashboard: React.FC = () => {
               <div className="space-y-2">
                 <h3 className="text-2xl font-bold text-slate-900">Thank You!</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">
-                  You have successfully claimed <span className="font-semibold text-slate-800">{claimedTitle}</span>. 
-                  Please head to the pickup location.
+                  You have successfully completed the donation of{' '}
+                  <span className="font-semibold text-slate-800">{claimedTitle}</span>.
                 </p>
               </div>
 

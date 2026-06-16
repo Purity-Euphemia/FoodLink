@@ -12,19 +12,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func main() {
 	// 1. Database Connection
 	dsn := os.Getenv("DATABASE_URL")
+	var db *gorm.DB
+	var err error
+
 	if dsn == "" {
-		dsn = "host=localhost user=postgres password=postgres dbname=foodlink port=5432 sslmode=disable"
+		log.Println("DATABASE_URL environment variable is empty. Falling back to local SQLite (foodlink.db) for development...")
+		db, err = gorm.Open(sqlite.Open("foodlink.db"), &gorm.Config{})
+	} else {
+		log.Println("Connecting to PostgreSQL database...")
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database")
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	// Database Connection Pool configuration
