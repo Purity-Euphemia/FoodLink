@@ -1,42 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { client } from '../src/api/client';
-import { DashboardStats, FoodPost } from '../types';
+import React from 'react';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { StatCard } from './StatCard';
+import { MainLayout } from './MainLayout';
 
 export const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [donations, setDonations] = useState<FoodPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        // Fetch both statistics and recent donations in parallel
-        const [statsRes, donationsRes] = await Promise.all([
-          client.get<DashboardStats>('/stats', { signal: controller.signal }),
-          client.get<FoodPost[]>('/donations', { signal: controller.signal })
-        ]);
-
-        setStats(statsRes.data);
-        setDonations(Array.isArray(donationsRes.data) ? donationsRes.data.slice(0, 5) : []);
-        setError(null);
-      } catch (err) {
-        if (err instanceof Error && err.name !== 'CanceledError') {
-          console.error("Dashboard fetch error:", err);
-          setError("Failed to load dashboard data. Please try again later.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-    return () => controller.abort();
-  }, []);
+  const { stats, donations, loading, error } = useDashboardData();
 
   if (loading) {
     return (
@@ -47,8 +15,8 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-10">
-      <div className="max-w-7xl mx-auto">
+    <MainLayout>
+      <div className="max-w-7xl mx-auto p-6 md:p-10">
         <header className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900">Community Overview</h1>
           <p className="text-slate-500">Real-time stats from the FoodLink network</p>
@@ -110,6 +78,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };

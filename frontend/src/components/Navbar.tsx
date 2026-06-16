@@ -1,7 +1,9 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LogOut, PlusCircle, User, ChefHat } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const userName = localStorage.getItem('name') || 'User';
   const userRole = localStorage.getItem('role');
 
@@ -9,7 +11,7 @@ export const Navbar: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('name');
     localStorage.removeItem('role');
-    window.location.href = '/'; // Simple redirect to landing/login
+    navigate('/'); 
   };
 
   return (
@@ -23,15 +25,15 @@ export const Navbar: React.FC = () => {
 
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-4 text-sm font-medium text-slate-600">
-              <a href="/dashboard" className="flex items-center gap-1.5 text-indigo-600">
+              <Link to="/dashboard" className="flex items-center gap-1.5 text-indigo-600">
                 <LayoutDashboard size={18} />
                 Dashboard
-              </a>
+              </Link>
               {userRole === 'donor' && (
-                <a href="/donate" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
+                <Link to="/donate" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
                   <PlusCircle size={18} />
                   New Donation
-                </a>
+                </Link>
               )}
             </div>
 
