@@ -8,6 +8,7 @@ import (
 	"foodlink/internal/repository"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
@@ -26,6 +27,15 @@ func main() {
 		log.Fatal("Failed to connect to database")
 	}
 
+	// Database Connection Pool configuration
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database instance for pooling: %v", err)
+	}
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
 	// 2. Migrations
 	if err := db.AutoMigrate(&domain.User{}, &domain.FoodPost{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
@@ -43,7 +53,11 @@ func main() {
 
 	// CORS Middleware - Essential for Frontend Integration
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := os.Getenv("FRONTEND_URL")
+		if origin == "" {
+			origin = "*"
+		}
+		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 

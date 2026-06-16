@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -14,6 +15,11 @@ var defaultSecret = []byte("your_super_secret_key")
 func GetJWTSecret() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
+		if gin.Mode() == gin.ReleaseMode {
+			log.Fatal("CRITICAL SECURITY ERROR: JWT_SECRET environment variable is not set in release mode!")
+		} else {
+			log.Println("WARNING: JWT_SECRET environment variable is not set. Using insecure default key for development.")
+		}
 		return defaultSecret
 	}
 	return []byte(secret)

@@ -4,6 +4,7 @@ import (
 	"foodlink/internal/api/middleware"
 	"foodlink/internal/business"
 	"foodlink/internal/domain"
+	"log"
 	"net/http"
 	"time"
 
@@ -27,7 +28,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := h.service.RegisterUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// Log detailed error internally and return clean user-facing error
+		log.Printf("[Auth] User registration failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed. Please check details or try again later."})
 		return
 	}
 
@@ -45,7 +48,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user, err := h.service.Authenticate(req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		if err.Error() == "invalid credentials" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			log.Printf("[Auth] Database error during login: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		}
 		return
 	}
 

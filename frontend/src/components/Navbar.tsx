@@ -1,16 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LogOut, PlusCircle, User, ChefHat } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const userName = localStorage.getItem('name') || 'User';
-  const userRole = localStorage.getItem('role');
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('name');
-    localStorage.removeItem('role');
+    logout();
     navigate('/'); 
   };
 
@@ -29,7 +27,7 @@ export const Navbar: React.FC = () => {
                 <LayoutDashboard size={18} />
                 Dashboard
               </Link>
-              {userRole === 'donor' && (
+              {user?.role === 'donor' && (
                 <Link to="/donate" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
                   <PlusCircle size={18} />
                   New Donation
@@ -41,8 +39,8 @@ export const Navbar: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 leading-none">{userName}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">{userRole}</p>
+                <p className="text-xs font-bold text-slate-900 leading-none">{user?.name || 'User'}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">{user?.role}</p>
               </div>
               <button 
                 onClick={handleLogout}
